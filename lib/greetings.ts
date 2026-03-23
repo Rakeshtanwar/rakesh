@@ -1,5 +1,3 @@
-// lib/greetings.ts
-
 export const morningWishes = [
   "🌸🌸 Good Morning! 🌸🌸 'Time is greater than money.' - The Professor. Aaj ka masterplan ready hai. Apne pehle study slot aur main tasks ko flawlessly execute karna shuru karo. ✅",
   "🌻🌤️ Rise and Shine! 🌤️🌻 'Not all treasure is silver and gold, mate.' 🏴‍☠️💰 Apna focus set karo aur aaj ke daily missions conquer karne nikal pado!"
@@ -20,7 +18,6 @@ export const nightWishes = [
   "😴🌟 Sweet Dreams! 🌟😴 'Sometimes, a truce is the most important part of a war.' Dimaag ko ab thoda aaram do, kal naye battle ke liye energy bacha kar rakhni hai."
 ];
 
-// Helper function to get a random wish based on the array provided
 export function getRandomWish(wishesArray: string[]) {
   return wishesArray[Math.floor(Math.random() * wishesArray.length)];
 }
