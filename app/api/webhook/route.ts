@@ -47,6 +47,17 @@ export async function POST(req: Request) {
       await sendMessage(chatId, "✅ Idea securely logged in the Command Center.");
       return NextResponse.json({ ok: true });
     }
+    // Save Direct Task to Command Center
+    if (text.toLowerCase().startsWith('task:')) {
+      const taskTitle = text.substring(5).trim();
+      await addDoc(collection(db, "tasks"), {
+        title: taskTitle,
+        status: "pending",
+        createdAt: serverTimestamp(),
+      });
+      await sendMessage(chatId, `🎯 Mission Accepted: "${taskTitle}" Command Center mein add ho gaya hai.`);
+      return NextResponse.json({ ok: true });
+    }
 
     // 🚀 DIRECT GEMINI REST API CALL (Aapka Logic)
     const prompt = `You are a strict, smart personal assistant. The user said: "${text}". Give a short, helpful, and energetic response.`;
