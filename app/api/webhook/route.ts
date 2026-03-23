@@ -1,11 +1,12 @@
+// app/api/webhook/route.ts
 import { NextResponse } from 'next/server';
-import { geminiModel } from '@/lib/gemini';
 import { db } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 const TELEGRAM_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_API_URL = `https://api.telegram.org/bot${TELEGRAM_TOKEN}`;
 const MY_TELEGRAM_ID = Number(process.env.MY_TELEGRAM_ID);
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 async function sendMessage(chatId: number, text: string) {
   await fetch(`${TELEGRAM_API_URL}/sendMessage`, {
@@ -37,7 +38,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: true });
     }
 
-    // Save idea to Firebase
+    // Save idea to Firebase Brain Dump
     if (text.toLowerCase().startsWith('note:') || text.toLowerCase().startsWith('idea:')) {
       await addDoc(collection(db, "brain_dump"), {
         text: text,
@@ -47,17 +48,34 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: true });
     }
 
-    // Gemini AI Processing
-    const prompt = `You are a strict, smart personal assistant. The user said: "${text}". Give a short, helpful response.`;
-    const aiResult = await geminiModel.generateContent(prompt);
+    // 🚀 DIRECT GEMINI REST API CALL (Aapka Logic)
+    const prompt = `You are a strict, smart personal assistant. The user said: "${text}". Give a short, helpful, and energetic response.`;
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+
+    const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }]
+        })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+        throw new Error(data.error ? data.error.message : "AI Engine Failed");
+    }
+
+    // AI ka reply nikalna
+    const aiResponseText = data.candidates[0].content.parts[0].text;
     
-    await sendMessage(chatId, aiResult.response.text());
+    // Telegram par AI ka reply bhejna
+    await sendMessage(chatId, aiResponseText);
     return NextResponse.json({ ok: true });
 
   } catch (error: any) {
-    // 🚨 Asli error ab Telegram par aayega aur logs mein bhi print hoga!
     console.error("System Error:", error);
-    await sendMessage(MY_TELEGRAM_ID, `⚠️ AI Error: ${error.message || "Something went wrong with Gemini."}`);
+    await sendMessage(MY_TELEGRAM_ID, `⚠️ AI Error: ${error.message || "Something went wrong."}`);
     return NextResponse.json({ ok: true });
   }
 }
