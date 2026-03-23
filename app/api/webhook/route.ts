@@ -25,12 +25,19 @@ export async function POST(req: Request) {
     const chatId = message.chat.id;
     const text = message.text;
 
+    // Security check
     if (chatId !== MY_TELEGRAM_ID) {
       await sendMessage(chatId, "Access Denied! System Locked. 🔒");
       return NextResponse.json({ ok: true });
     }
 
-    // Save idea to Firebase Brain Dump
+    // Start command
+    if (text === '/start') {
+      await sendMessage(chatId, "Aye aye, Captain! 🏴‍☠️ Command Center is online. Send a note or say Hi!");
+      return NextResponse.json({ ok: true });
+    }
+
+    // Save idea to Firebase
     if (text.toLowerCase().startsWith('note:') || text.toLowerCase().startsWith('idea:')) {
       await addDoc(collection(db, "brain_dump"), {
         text: text,
@@ -40,12 +47,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: true });
     }
 
+    // Gemini AI Processing
     const prompt = `You are a strict, smart personal assistant. The user said: "${text}". Give a short, helpful response.`;
     const aiResult = await geminiModel.generateContent(prompt);
     
     await sendMessage(chatId, aiResult.response.text());
     return NextResponse.json({ ok: true });
-  } catch (error) {
+
+  } catch (error: any) {
+    // 🚨 Asli error ab Telegram par aayega aur logs mein bhi print hoga!
+    console.error("System Error:", error);
+    await sendMessage(MY_TELEGRAM_ID, `⚠️ AI Error: ${error.message || "Something went wrong with Gemini."}`);
     return NextResponse.json({ ok: true });
   }
 }
